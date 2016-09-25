@@ -14,6 +14,7 @@
 #include <openssl/rand.h>
 #include <openssl/bn.h>
 #include <openssl/engine.h>
+#include <common/common.h>
 
 
 #define ERROR_EXIT_IF( condition_ ) \
@@ -87,14 +88,7 @@ BIGNUM* generate_prime( int bits, int safe, int print_hex )
 
 int main( int argc, char** argv )
 {
-     printf( "starting...\n" );
-     SSL_load_error_strings();
-     ENGINE* e = ENGINE_by_id( "openbsd_dev_crypto" );
-     ERROR_EXIT_IF( e == NULL );
-     seed_prng( 8192 );
-     BIGNUM* prime = generate_prime( 8192, 0, 0 );
-     BN_free( prime );
-     ERR_free_strings();
-     printf( "done.\n" );
+     openssl_init();
+     openssl_shutdown();
      return EXIT_SUCCESS;
 }
