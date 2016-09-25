@@ -4,6 +4,7 @@ add_definitions(-Wall -Werror -Wpedantic)
 
 include_directories(${CMAKE_SOURCE_DIR})
 
+find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
 
 add_subdirectory(common)

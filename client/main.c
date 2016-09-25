@@ -23,7 +23,7 @@ void do_client_loop( BIO* bio )
           int n_written = 0;
           for( int total_written = 0; total_written < sizeof( buf ); total_written += n_written )
           {
-               n_written = BIO_write( bio, buf + n_written, strlen( buf ) - n_written );
+               n_written = BIO_write( bio, buf + n_written, strlen( buf ) - total_written );
                if( n_written <= 0 )
                {
                     return;
