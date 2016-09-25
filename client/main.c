@@ -6,9 +6,49 @@
  */
 
 #include <stdlib.h>
+#include <stdio.h>
+#include <openssl/ssl.h>
+#include <common/common.h>
+
+
+void do_client_loop( BIO* bio )
+{
+     while( 1 )
+     {
+          char buf[ 80 ] = { 0 };
+          if( !fgets( buf, sizeof( buf ), stdin ) )
+          {
+               break;
+          }
+          int n_written = 0;
+          for( int total_written = 0; total_written < sizeof( buf ); total_written += n_written )
+          {
+               n_written = BIO_write( bio, buf + n_written, strlen( buf ) - n_written );
+               if( n_written <= 0 )
+               {
+                    return;
+               }
+          }
+     }
+}
 
 
 int main( int argc, char **argv )
 {
+     openssl_init();
+     BIO* conn = BIO_new_connect( "localhost:8080" );
+     if( !conn )
+     {
+          openssl_error_report_and_exit( __FILE__, __LINE__, "create new connection error" );
+     }
+     if( BIO_do_connect( conn ) <= 0 )
+     {
+          openssl_error_report_and_exit( __FILE__, __LINE__, "remote host connection error" );
+     }
+     printf( "connection established\n" );
+     do_client_loop( conn );
+     printf( "connection closed\n" );
+     BIO_free( conn );
+     openssl_shutdown();
      return EXIT_SUCCESS;
 }
