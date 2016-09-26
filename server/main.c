@@ -50,23 +50,21 @@ int main( int argc, char **argv )
 {
      openssl_init();
      BIO* acc = BIO_new_accept( "8080" );
-     if( !acc )
-     {
-          openssl_error_report_and_exit( __FILE__, __LINE__, "create new accept error" );
-     }
+     SSL_ERROR_INTERRUPT_IF( !acc, "create new accept error" );
      if( BIO_do_accept( acc ) <= 0 )
      {
-          openssl_error_report_and_exit( __FILE__, __LINE__, "bind error" );
+          SSL_ERROR_INTERRUPT( "bind error" );
      }
      pthread_t t_id;
      while( 1 )
      {
           if( BIO_do_accept( acc ) <= 0 )
           {
-               openssl_error_report_and_exit( __FILE__, __LINE__, "accept error" );
+               SSL_ERROR_INTERRUPT( "accept error" );
           }
           BIO* client = BIO_pop( acc );
-          pthread_create( &t_id, NULL, server_thread, client );
+          const int errnum = pthread_create( &t_id, NULL, server_thread, client );
+          SYS_ERROR_INTERRUPT_IF( errnum != 0, errnum, "thread creating error" );
      }
      BIO_free( acc );
      openssl_shutdown();

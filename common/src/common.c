@@ -29,10 +29,7 @@ static void locking_function( int mode, int n, const char* file, int line )
           errnum = pthread_mutex_unlock( &mutex_array[ n ] );
      }
 
-     if( errnum )
-     {
-          stdlib_error_report_and_exit( errnum, __FILE__, __LINE__, "mutex locking/unlocking error" );
-     }
+     SYS_ERROR_INTERRUPT_IF( errnum != 0, errnum, "mutex locking/unlocking error" );
 }
 
 
@@ -53,10 +50,7 @@ static int openssl_thread_init()
      for( int i = 0; i < num_locks; ++i )
      {
           const int errnum = pthread_mutex_init( &mutex_array[ i ], NULL );
-          if( errnum )
-          {
-               stdlib_error_report_and_exit( errnum, __FILE__, __LINE__, "mutex initialization error" );
-          }
+          SYS_ERROR_INTERRUPT_IF( errnum != 0, errnum, "mutex initialization error" );
      }
      CRYPTO_set_id_callback( id_function );
      CRYPTO_set_locking_callback( locking_function );
@@ -73,10 +67,7 @@ static int openssl_thread_cleanup()
      for( int i = 0; i < CRYPTO_num_locks(); ++i )
      {
           const int errnum = pthread_mutex_destroy( &mutex_array[ i ] );
-          if( errnum )
-          {
-               stdlib_error_report_and_exit( errnum, __FILE__, __LINE__, "mutex destroying error" );
-          }
+          SYS_ERROR_INTERRUPT_IF( errnum != 0, errnum, "mutex destroying error" );
      }
      free( mutex_array );
      mutex_array = NULL;
@@ -90,7 +81,7 @@ void openssl_init()
 {
      if( !openssl_thread_init() || !SSL_library_init() )
      {
-          openssl_error_report_and_exit( __FILE__, __LINE__, "openssl initialization failed" );
+          SSL_ERROR_INTERRUPT( "openssl initialization failed" );
      }
      SSL_load_error_strings();
 }
@@ -100,22 +91,22 @@ void openssl_shutdown()
 {
      if( !openssl_thread_cleanup() )
      {
-          openssl_error_report_and_exit( __FILE__, __LINE__, "openssl shutdown failed" );
+          SSL_ERROR_INTERRUPT( "openssl shutdown failed" );
      }
      ERR_free_strings();
 }
 
 
-void stdlib_error_report_and_exit( int errnum, const char* file, int line, const char* message )
+void sys_error_report_and_exit( int errnum, const char* file, int line, const char* message )
 {
-     fprintf( stderr, "** stdlib error: %s:%i %s: %s\n", file, line, message, strerror( errnum ) );
+     fprintf( stderr, "** sys error: %s:%i %s: %s\n", file, line, message, strerror( errnum ) );
      exit( EXIT_FAILURE );
 }
 
 
-void openssl_error_report_and_exit( const char* file, int line, const char* message )
+void ssl_error_report_and_exit( const char* file, int line, const char* message )
 {
-     fprintf( stderr, "** openssl error: %s:%i %s\n", file, line, message );
+     fprintf( stderr, "** ssl error: %s:%i %s\n", file, line, message );
      ERR_print_errors_fp( stderr );
      exit( EXIT_FAILURE );
 }

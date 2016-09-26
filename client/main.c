@@ -37,13 +37,10 @@ int main( int argc, char **argv )
 {
      openssl_init();
      BIO* conn = BIO_new_connect( "localhost:8080" );
-     if( !conn )
-     {
-          openssl_error_report_and_exit( __FILE__, __LINE__, "create new connection error" );
-     }
+     SSL_ERROR_INTERRUPT_IF( !conn, "create new connection error" );
      if( BIO_do_connect( conn ) <= 0 )
      {
-          openssl_error_report_and_exit( __FILE__, __LINE__, "remote host connection error" );
+          SSL_ERROR_INTERRUPT( "remote host connection error" );
      }
      printf( "connection established\n" );
      do_client_loop( conn );
