@@ -86,15 +86,9 @@ static int openssl_thread_cleanup()
 }
 
 
-static int openssl_library_init()
-{
-     return 1;
-}
-
-
 void openssl_init()
 {
-     if( !openssl_thread_init() || !openssl_library_init() )
+     if( !openssl_thread_init() || !SSL_library_init() )
      {
           openssl_error_report_and_exit( __FILE__, __LINE__, "openssl initialization failed" );
      }
