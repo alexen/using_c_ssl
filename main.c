@@ -88,7 +88,7 @@ BIGNUM* generate_prime( int bits, int safe, int print_hex )
 
 int main( int argc, char** argv )
 {
-     openssl_init();
-     openssl_shutdown();
+     ssl_init();
+     ssl_shutdown();
      return EXIT_SUCCESS;
 }

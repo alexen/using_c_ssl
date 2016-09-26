@@ -8,9 +8,11 @@
 #include <common/common.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <pthread.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+#include <openssl/rand.h>
 
 
 static pthread_mutex_t* mutex_array = NULL;
@@ -77,7 +79,7 @@ static int openssl_thread_cleanup()
 }
 
 
-void openssl_init()
+void ssl_init()
 {
      if( !openssl_thread_init() || !SSL_library_init() )
      {
@@ -87,13 +89,20 @@ void openssl_init()
 }
 
 
-void openssl_shutdown()
+void ssl_shutdown()
 {
      if( !openssl_thread_cleanup() )
      {
           SSL_ERROR_INTERRUPT( "openssl shutdown failed" );
      }
      ERR_free_strings();
+}
+
+
+void ssl_seed_prng_bytes( int bytes )
+{
+     const int n_bytes = RAND_load_file( "/dev/urandom", bytes );
+     SYS_ERROR_INTERRUPT_IF( n_bytes != bytes, errno, "rand seeding error" );
 }
 
 

@@ -8,8 +8,9 @@
 #pragma once
 
 
-void openssl_init();
-void openssl_shutdown();
+void ssl_init();
+void ssl_shutdown();
+void ssl_seed_prng_bytes( int bytes );
 void sys_error_report_and_exit( int errnum, const char* file, int line, const char* message );
 void ssl_error_report_and_exit( const char* file, int line, const char* message );
 

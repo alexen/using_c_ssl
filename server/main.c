@@ -48,7 +48,7 @@ void* server_thread( void* args )
 
 int main( int argc, char **argv )
 {
-     openssl_init();
+     ssl_init();
      BIO* acc = BIO_new_accept( "8080" );
      SSL_ERROR_INTERRUPT_IF( !acc, "create new accept error" );
      if( BIO_do_accept( acc ) <= 0 )
@@ -67,6 +67,6 @@ int main( int argc, char **argv )
           SYS_ERROR_INTERRUPT_IF( errnum != 0, errnum, "thread creating error" );
      }
      BIO_free( acc );
-     openssl_shutdown();
+     ssl_shutdown();
      return EXIT_SUCCESS;
 }
