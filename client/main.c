@@ -53,9 +53,11 @@ SSL_CTX* setup_client_ctx( const char* certfile, const char* pk_file, const char
      }
      if( pk_file )
      {
-          SSL_CTX_set_default_passwd_cb( ctx, password_callback );
-          SSL_CTX_set_default_passwd_cb_userdata( ctx, (void*) pk_password );
-
+          if( pk_password )
+          {
+               SSL_CTX_set_default_passwd_cb( ctx, password_callback );
+               SSL_CTX_set_default_passwd_cb_userdata( ctx, (void*) pk_password );
+          }
           if( !SSL_CTX_use_PrivateKey_file( ctx, pk_file, SSL_FILETYPE_PEM ) )
           {
                SSL_ERROR_INTERRUPT( "using private key file error" );
@@ -83,7 +85,7 @@ int main( int argc, char **argv )
      SSL* ssl = SSL_new( ctx );
      SSL_ERROR_INTERRUPT_IF( !ssl, "ssl creating error" );
      SSL_set_bio( ssl, conn, conn );
-     if( SSL_connect( ssl ) )
+     if( SSL_connect( ssl ) <= 0 )
      {
           SSL_ERROR_INTERRUPT( "ssl connection error" );
      }
