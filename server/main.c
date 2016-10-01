@@ -21,12 +21,12 @@ int do_server_loop( SSL* ssl )
           char buf[ 80 ] = { 0 };
           for( int total_read = 0; total_read < sizeof( buf ); total_read += n_read )
           {
-               n_read = SSL_read( ssl, buf + n_read, sizeof( buf ) - total_read );
+               n_read = SSL_read( ssl, buf + total_read, sizeof( buf ) - total_read );
                if( n_read <= 0 )
                {
                     break;
                }
-               fwrite( buf, 1, total_read, stdout );
+               fwrite( buf, 1, n_read, stdout );
           }
      }
      while( n_read > 0 );
