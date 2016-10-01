@@ -18,7 +18,7 @@
 static pthread_mutex_t* mutex_array = NULL;
 
 
-static void locking_function( int mode, int n, const char* file, int line )
+static void locking_function_callback( int mode, int n, const char* file, int line )
 {
      int errnum = 0;
 
@@ -35,9 +35,42 @@ static void locking_function( int mode, int n, const char* file, int line )
 }
 
 
-static unsigned long id_function()
+static unsigned long id_function_callback()
 {
      return (unsigned long) pthread_self();
+}
+
+
+static int password_callback( char* buf, int size, int flags, void* userdata )
+{
+     const char* password = (const char*) userdata;
+     const int passwordLen = strlen( password );
+     strncpy( buf, password, passwordLen );
+     return passwordLen;
+}
+
+
+SSL_CTX* ssl_ctx_setup( const char* certfile, const char* pk_file, const char* pk_password )
+{
+     SSL_CTX* ctx = SSL_CTX_new( SSLv23_method() );
+     SSL_ERROR_INTERRUPT_IF( !ctx, "ssl context creating error" );
+     if( certfile && !SSL_CTX_use_certificate_chain_file( ctx, certfile ) )
+     {
+          SSL_ERROR_INTERRUPT( "using cert chain file error" );
+     }
+     if( pk_file )
+     {
+          if( pk_password )
+          {
+               SSL_CTX_set_default_passwd_cb( ctx, password_callback );
+               SSL_CTX_set_default_passwd_cb_userdata( ctx, (void*) pk_password );
+          }
+          if( !SSL_CTX_use_PrivateKey_file( ctx, pk_file, SSL_FILETYPE_PEM ) )
+          {
+               SSL_ERROR_INTERRUPT( "using private key file error" );
+          }
+     }
+     return ctx;
 }
 
 
@@ -54,8 +87,8 @@ static int openssl_thread_init()
           const int errnum = pthread_mutex_init( &mutex_array[ i ], NULL );
           SYS_ERROR_INTERRUPT_IF( errnum != 0, errnum, "mutex initialization error" );
      }
-     CRYPTO_set_id_callback( id_function );
-     CRYPTO_set_locking_callback( locking_function );
+     CRYPTO_set_id_callback( id_function_callback );
+     CRYPTO_set_locking_callback( locking_function_callback );
      return 1;
 }
 

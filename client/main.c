@@ -34,39 +34,6 @@ int do_client_loop( SSL* ssl )
 }
 
 
-int password_callback( char* buf, int size, int flags, void* userdata )
-{
-     const char* password = (const char*) userdata;
-     const int passwordLen = strlen( password );
-     strncpy( buf, password, passwordLen );
-     return passwordLen;
-}
-
-
-SSL_CTX* setup_client_ctx( const char* certfile, const char* pk_file, const char* pk_password )
-{
-     SSL_CTX* ctx = SSL_CTX_new( SSLv23_method() );
-     SSL_ERROR_INTERRUPT_IF( !ctx, "ssl context creating error" );
-     if( certfile && !SSL_CTX_use_certificate_chain_file( ctx, certfile ) )
-     {
-          SSL_ERROR_INTERRUPT( "using cert chain file error" );
-     }
-     if( pk_file )
-     {
-          if( pk_password )
-          {
-               SSL_CTX_set_default_passwd_cb( ctx, password_callback );
-               SSL_CTX_set_default_passwd_cb_userdata( ctx, (void*) pk_password );
-          }
-          if( !SSL_CTX_use_PrivateKey_file( ctx, pk_file, SSL_FILETYPE_PEM ) )
-          {
-               SSL_ERROR_INTERRUPT( "using private key file error" );
-          }
-     }
-     return ctx;
-}
-
-
 int main( int argc, char **argv )
 {
      static const char* const certfile = "/home/alexen/worktrash/ssl/client.pem";
@@ -75,7 +42,7 @@ int main( int argc, char **argv )
 
      ssl_init();
      ssl_seed_prng_bytes( 1024 );
-     SSL_CTX* ctx = setup_client_ctx( certfile, pkfile, pkpassword );
+     SSL_CTX* ctx = ssl_ctx_setup( certfile, pkfile, pkpassword );
      BIO* conn = BIO_new_connect( "localhost:8080" );
      SSL_ERROR_INTERRUPT_IF( !conn, "create new connection error" );
      if( BIO_do_connect( conn ) <= 0 )

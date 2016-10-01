@@ -100,7 +100,7 @@ int main( int argc, char **argv )
 
      ssl_init();
      ssl_seed_prng_bytes( 1024 );
-     SSL_CTX* ctx = setup_server_ctx( certfile, pkfile, pkpassword );
+     SSL_CTX* ctx = ssl_ctx_setup( certfile, pkfile, pkpassword );
      BIO* acc = BIO_new_accept( "8080" );
      SSL_ERROR_INTERRUPT_IF( !acc, "create new accept error" );
      if( BIO_do_accept( acc ) <= 0 )
