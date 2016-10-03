@@ -74,6 +74,26 @@ SSL_CTX* ssl_ctx_setup( const char* certfile, const char* pk_file, const char* p
 }
 
 
+int ssl_verify_callback( int ok, X509_STORE_CTX* store )
+{
+     if( !ok )
+     {
+          X509* cert = X509_STORE_CTX_get_current_cert( store );
+          const int depth = X509_STORE_CTX_get_error_depth( store );
+          const int error = X509_STORE_CTX_get_error( store );
+
+          fprintf( stderr, "- error with certificate in depth %i\n", depth );
+          fprintf( stderr, "  issuer:" );
+          X509_NAME_print_ex_fp( stderr, X509_get_issuer_name( cert ), 0, XN_FLAG_SEP_COMMA_PLUS );
+          fprintf( stderr, "  subject:" );
+          X509_NAME_print_ex_fp( stderr, X509_get_subject_name( cert ), 0, XN_FLAG_SEP_COMMA_PLUS );
+          fprintf( stderr, "  error %i:%s\n", error, X509_verify_cert_error_string( error ) );
+     }
+
+     return ok;
+}
+
+
 static int openssl_thread_init()
 {
      const int num_locks = CRYPTO_num_locks();

@@ -14,6 +14,7 @@ void ssl_init();
 void ssl_shutdown();
 void ssl_seed_prng_bytes( int bytes );
 SSL_CTX* ssl_ctx_setup( const char* certfile, const char* pk_file, const char* pk_password );
+int ssl_verify_callback( int ok, X509_STORE_CTX* store );
 void sys_error_report_and_exit( int errnum, const char* file, int line, const char* message );
 void ssl_error_report_and_exit( const char* file, int line, const char* message );
 
