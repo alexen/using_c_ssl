@@ -6,6 +6,7 @@
  */
 
 #include <common/common.h>
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -13,6 +14,7 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <openssl/rand.h>
+#include <openssl/x509v3.h>
 
 
 static pthread_mutex_t* mutex_array = NULL;
@@ -91,6 +93,83 @@ int ssl_verify_callback( int ok, X509_STORE_CTX* store )
      }
 
      return ok;
+}
+
+
+long ssl_do_post_connection_check( SSL* ssl, const char* host )
+{
+     assert( ssl != NULL && "\"ssl\" must be specified" );
+     assert( host != NULL && "\"host\" must be specified" );
+
+     X509* cert = SSL_get_peer_certificate( ssl );
+     if( !cert )
+     {
+          goto exit_by_error;
+     }
+
+     int ok = 0;
+     const int ext_count = X509_get_ext_count( cert );
+     if( ext_count > 0 )
+     {
+          for( int i = 0; i < ext_count; ++i )
+          {
+               X509_EXTENSION *ext = X509_get_ext( cert, i );
+               const char* ext_str =
+                    OBJ_nid2sn(
+                         OBJ_obj2nid(
+                              X509_EXTENSION_get_object( ext ) ) );
+
+               if( !strcmp( ext_str, "subjectAltName" ) )
+               {
+                    const X509V3_EXT_METHOD* method = X509V3_EXT_get( ext );
+                    if( !method )
+                    {
+                         break;
+                    }
+                    const unsigned char* data = ext->value->data;
+                    STACK_OF( CONF_VALUE )* vals =
+                         method->i2v( method, method->d2i( NULL, &data, ext->value->length ), NULL );
+                    for( int j = 0; j < sk_CONF_VALUE_num( vals ); ++j )
+                    {
+                         CONF_VALUE* val = sk_CONF_VALUE_value( vals, j );
+                         if( !strcmp( val->name, "DNS" ) && !strcmp( val->value, host ) )
+                         {
+                              ok = 1;
+                              break;
+                         }
+                    }
+               }
+               if( ok )
+               {
+                    break;
+               }
+          }
+     }
+
+     if( !ok )
+     {
+          char data[ 256 ] = { 0 };
+          const size_t data_len = sizeof( data );
+          X509_NAME* subj = X509_get_subject_name( cert );
+          if( subj && X509_NAME_get_text_by_NID( subj, NID_commonName, data, data_len ) > 0 )
+          {
+               data[ data_len - 1 ] = 0;
+               if( strcasecmp( data, host ) )
+               {
+                    goto exit_by_error;
+               }
+          }
+     }
+
+     X509_free( cert );
+     return SSL_get_verify_result( ssl );
+
+exit_by_error:
+     if( cert )
+     {
+          X509_free( cert );
+     }
+     return X509_V_ERR_APPLICATION_VERIFICATION;
 }
 
 
