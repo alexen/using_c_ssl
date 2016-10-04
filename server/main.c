@@ -61,13 +61,19 @@ void* server_thread( void* args )
 
 int main( int argc, char **argv )
 {
-     static const char* const certfile = "/home/alexen/worktrash/ssl/server.pem";
-     static const char* const pkfile = "/home/alexen/worktrash/ssl/server.pem";
-     static const char* const pkpassword = "111111";
+     static const char* const CERT_FILE = "/home/alexen/worktrash/ssl/server.pem";
+     static const char* const PK_FILE = "/home/alexen/worktrash/ssl/server.pem";
+     static const char* const PK_PASSWORD = "111111";
 
      ssl_init();
      ssl_seed_prng_bytes( 1024 );
-     SSL_CTX* ctx = ssl_ctx_setup( certfile, pkfile, pkpassword );
+
+     struct ssl_ctx_setup_input input = { 0 };
+     input.cert_file = CERT_FILE;
+     input.pk_file = PK_FILE;
+     input.pk_password = PK_PASSWORD;
+
+     SSL_CTX* ctx = ssl_ctx_setup( &input );
      BIO* acc = BIO_new_accept( "8080" );
      SSL_ERROR_INTERRUPT_IF( !acc, "create new accept error" );
      if( BIO_do_accept( acc ) <= 0 )

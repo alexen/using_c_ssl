@@ -52,25 +52,48 @@ static int password_callback( char* buf, int size, int flags, void* userdata )
 }
 
 
-SSL_CTX* ssl_ctx_setup( const char* certfile, const char* pk_file, const char* pk_password )
+SSL_CTX* ssl_ctx_setup( const struct ssl_ctx_setup_input* const input )
 {
+     assert( input != NULL && "input struct must be specified" );
+     assert( !(input->ca_file && input->ca_dir) && "either CA file or CA dir must be specified, not both" );
+
      SSL_CTX* ctx = SSL_CTX_new( SSLv23_method() );
      SSL_ERROR_INTERRUPT_IF( !ctx, "ssl context creating error" );
-     if( certfile && !SSL_CTX_use_certificate_chain_file( ctx, certfile ) )
+
+     int peer_cert_verification_on = 0;
+
+     if( input->ca_file || input->ca_dir )
+     {
+          if( !SSL_CTX_load_verify_locations( ctx, input->ca_file, input->ca_dir ) )
+          {
+               SSL_ERROR_INTERRUPT( "loading verify location error" );
+          }
+          if( !SSL_CTX_set_default_verify_paths( ctx ) )
+          {
+               SSL_ERROR_INTERRUPT( "setting default verify paths error" );
+          }
+          peer_cert_verification_on = 1;
+     }
+     if( input->cert_file && !SSL_CTX_use_certificate_chain_file( ctx, input->cert_file ) )
      {
           SSL_ERROR_INTERRUPT( "using cert chain file error" );
      }
-     if( pk_file )
+     if( input->pk_file )
      {
-          if( pk_password )
+          if( input->pk_password )
           {
                SSL_CTX_set_default_passwd_cb( ctx, password_callback );
-               SSL_CTX_set_default_passwd_cb_userdata( ctx, (void*) pk_password );
+               SSL_CTX_set_default_passwd_cb_userdata( ctx, (void*) input->pk_password );
           }
-          if( !SSL_CTX_use_PrivateKey_file( ctx, pk_file, SSL_FILETYPE_PEM ) )
+          if( !SSL_CTX_use_PrivateKey_file( ctx, input->pk_file, SSL_FILETYPE_PEM ) )
           {
                SSL_ERROR_INTERRUPT( "using private key file error" );
           }
+     }
+     if( input->verify_callback && peer_cert_verification_on )
+     {
+          SSL_CTX_set_verify( ctx, input->verify_flags, input->verify_callback );
+          SSL_CTX_set_verify_depth( ctx, input->verify_depth );
      }
      return ctx;
 }
