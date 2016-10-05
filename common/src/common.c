@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <pthread.h>
+#include <syslog.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <openssl/rand.h>
@@ -124,6 +125,8 @@ long ssl_do_post_connection_check( SSL* ssl, const char* host )
      assert( ssl != NULL && "\"ssl\" must be specified" );
      assert( host != NULL && "\"host\" must be specified" );
 
+     syslog( LOG_DEBUG, "%s", "post connect peer certificate checking" );
+
      X509* cert = SSL_get_peer_certificate( ssl );
      if( !cert )
      {
@@ -142,6 +145,8 @@ long ssl_do_post_connection_check( SSL* ssl, const char* host )
                          OBJ_obj2nid(
                               X509_EXTENSION_get_object( ext ) ) );
 
+               syslog( LOG_DEBUG, "extracted extension: \"%s\"", ext_str );
+
                if( !strcmp( ext_str, "subjectAltName" ) )
                {
                     const X509V3_EXT_METHOD* method = X509V3_EXT_get( ext );
@@ -152,11 +157,19 @@ long ssl_do_post_connection_check( SSL* ssl, const char* host )
                     const unsigned char* data = ext->value->data;
                     STACK_OF( CONF_VALUE )* vals =
                          method->i2v( method, method->d2i( NULL, &data, ext->value->length ), NULL );
+
+                    syslog( LOG_DEBUG, "%s", "searching among CONF_VALUES..." );
+
                     for( int j = 0; j < sk_CONF_VALUE_num( vals ); ++j )
                     {
                          CONF_VALUE* val = sk_CONF_VALUE_value( vals, j );
+
+                         syslog( LOG_DEBUG, "processing \"%s\" = \"%s\"", val->name, val->value );
+
                          if( !strcmp( val->name, "DNS" ) && !strcmp( val->value, host ) )
                          {
+                              syslog( LOG_DEBUG, "%s", "found! breaking..." );
+
                               ok = 1;
                               break;
                          }
@@ -171,16 +184,20 @@ long ssl_do_post_connection_check( SSL* ssl, const char* host )
 
      if( !ok )
      {
+          syslog( LOG_DEBUG, "%s", "still not found; checking common name value..." );
+
           char data[ 256 ] = { 0 };
           const size_t data_len = sizeof( data );
           X509_NAME* subj = X509_get_subject_name( cert );
           if( subj && X509_NAME_get_text_by_NID( subj, NID_commonName, data, data_len ) > 0 )
           {
                data[ data_len - 1 ] = 0;
+               syslog( LOG_DEBUG, "common name: \"%s\"", data );
                if( strcasecmp( data, host ) )
                {
                     goto exit_by_error;
                }
+               syslog( LOG_DEBUG, "%s", "found! breaking..." );
           }
      }
 
