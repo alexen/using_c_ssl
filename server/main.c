@@ -43,6 +43,12 @@ void* server_thread( void* args )
      {
           SSL_ERROR_INTERRUPT( "accepting SSL connection error" );
      }
+     const long ret_code = ssl_do_post_connection_check( ssl, "client.localsecurity.org" );
+     if( ret_code != X509_V_OK )
+     {
+          fprintf( stderr, "- error: peer certificate: %s\n", X509_verify_cert_error_string( ret_code ) );
+          SSL_ERROR_INTERRUPT( "peer certificate verification error" );
+     }
      printf( "SSL connection opened\n" );
      if( do_server_loop( ssl ) )
      {
@@ -61,6 +67,7 @@ void* server_thread( void* args )
 
 int main( int argc, char **argv )
 {
+     static const char* const CA_FILE = "/home/alexen/worktrash/ssl/rootcert.pem";
      static const char* const CERT_FILE = "/home/alexen/worktrash/ssl/server.pem";
      static const char* const PK_FILE = "/home/alexen/worktrash/ssl/server.pem";
      static const char* const PK_PASSWORD = "111111";
@@ -72,6 +79,10 @@ int main( int argc, char **argv )
      input.cert_file = CERT_FILE;
      input.pk_file = PK_FILE;
      input.pk_password = PK_PASSWORD;
+     input.ca_file = CA_FILE;
+     input.verify_callback = ssl_verify_callback;
+     input.verify_flags = SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT;
+     input.verify_depth = 4;
 
      SSL_CTX* ctx = ssl_ctx_setup( &input );
      BIO* acc = BIO_new_accept( "8080" );
