@@ -40,6 +40,7 @@ int main( int argc, char **argv )
      static const char* const CERT_FILE = "/home/alexen/worktrash/ssl/client.pem";
      static const char* const PK_FILE = "/home/alexen/worktrash/ssl/client.pem";
      static const char* const PK_PASSWORD = "111111";
+     static const char* const CIPHER_LIST = "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGHT";
 
      ssl_init();
      ssl_seed_prng_bytes( 1024 );
@@ -52,6 +53,8 @@ int main( int argc, char **argv )
      input.verify_callback = ssl_verify_callback;
      input.verify_flags = SSL_VERIFY_PEER;
      input.verify_depth = 4;
+     input.ssl_options = SSL_OP_ALL | SSL_OP_NO_SSLv2;
+     input.cipher_list = CIPHER_LIST;
 
      SSL_CTX* ctx = ssl_ctx_setup( &input );
      BIO* conn = BIO_new_connect( "localhost:8080" );
