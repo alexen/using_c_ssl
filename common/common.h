@@ -25,6 +25,9 @@ struct ssl_ctx_setup_input {
      int verify_flags;
      int verify_depth;
      int (*verify_callback)( int, X509_STORE_CTX* );
+     const char* cipher_list;
+     long ssl_options;
+     DH* (*tmp_dh_callback)( SSL*, int, int );
 };
 
 SSL_CTX* ssl_ctx_setup( const struct ssl_ctx_setup_input* const input );

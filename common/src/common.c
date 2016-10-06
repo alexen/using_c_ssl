@@ -96,6 +96,21 @@ SSL_CTX* ssl_ctx_setup( const struct ssl_ctx_setup_input* const input )
           SSL_CTX_set_verify( ctx, input->verify_flags, input->verify_callback );
           SSL_CTX_set_verify_depth( ctx, input->verify_depth );
      }
+     if( input->ssl_options )
+     {
+          SSL_CTX_set_options( ctx, input->ssl_options );
+     }
+     if( input->cipher_list )
+     {
+          if( !SSL_CTX_set_cipher_list( ctx, input->cipher_list ) )
+          {
+               SSL_ERROR_INTERRUPT( "setting cipher list error" );
+          }
+     }
+     if( input->tmp_dh_callback )
+     {
+          SSL_CTX_set_tmp_dh_callback( ctx, input->tmp_dh_callback );
+     }
      return ctx;
 }
 
