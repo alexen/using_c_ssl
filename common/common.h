@@ -36,6 +36,8 @@ int ssl_verify_callback( int ok, X509_STORE_CTX* store );
 
 long ssl_do_post_connection_check( SSL* ssl, const char* host );
 
+DH* tmp_dh_callback( SSL* ssl, int is_export, int keylength );
+
 void sys_error_report_and_exit( int errnum, const char* file, int line, const char* message );
 
 void ssl_error_report_and_exit( const char* file, int line, const char* message );

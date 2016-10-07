@@ -53,6 +53,30 @@ static int password_callback( char* buf, int size, int flags, void* userdata )
 }
 
 
+static DH* read_dh_file( const char* dh_file )
+{
+     syslog( LOG_DEBUG, "reading DH-file \"%s\"", dh_file );
+
+     BIO* bio = BIO_new_file( dh_file, "r" );
+     SSL_ERROR_INTERRUPT_IF( !bio, "DH file opening error" );
+     DH* dh = PEM_read_bio_DHparams( bio, NULL, NULL, NULL );
+     SSL_ERROR_INTERRUPT_IF( !dh, "DH file reading error" );
+     BIO_free( bio );
+     return dh;
+}
+
+
+DH* tmp_dh_callback( SSL* ssl, int is_export, int keylength )
+{
+     static DH* dh = NULL;
+     if( !dh )
+     {
+          dh = read_dh_file( "/home/alexen/worktrash/ssl/dh1024.pem" );
+     }
+     return dh;
+}
+
+
 SSL_CTX* ssl_ctx_setup( const struct ssl_ctx_setup_input* const input )
 {
      assert( input != NULL && "input struct must be specified" );
