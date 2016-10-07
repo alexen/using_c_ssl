@@ -40,7 +40,7 @@ int main( int argc, char **argv )
      static const char* const CERT_FILE = "/home/alexen/worktrash/ssl/client.pem";
      static const char* const PK_FILE = "/home/alexen/worktrash/ssl/client.pem";
      static const char* const PK_PASSWORD = "111111";
-     static const char* const CIPHER_LIST = "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGHT";
+     static const char* const CIPHER_LIST = "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH";
 
      ssl_init();
      ssl_seed_prng_bytes( 1024 );
