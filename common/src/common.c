@@ -69,6 +69,9 @@ static DH* read_dh_file( const char* dh_file )
 DH* tmp_dh_callback( SSL* ssl, int is_export, int keylength )
 {
      static DH* dh = NULL;
+
+     syslog( LOG_DEBUG, "DH-params requested with keylength %i", keylength );
+
      if( !dh )
      {
           dh = read_dh_file( "/home/alexen/worktrash/ssl/dh1024.pem" );
