@@ -8,28 +8,26 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <syslog.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <common/common.h>
 
 
-int do_server_loop( SSL* ssl )
+int do_server_loop_v2( SSL* ssl )
 {
-     int n_read = 0;
-     do
+     char buf[ 80 ] = { 0 };
+     const size_t buflen = sizeof( buf );
+
+     while( 1 )
      {
-          char buf[ 80 ] = { 0 };
-          for( int total_read = 0; total_read < sizeof( buf ); total_read += n_read )
+          const int ret = SSL_read( ssl, buf, buflen );
+          if( ret <= 0 )
           {
-               n_read = SSL_read( ssl, buf + total_read, sizeof( buf ) - total_read );
-               if( n_read <= 0 )
-               {
-                    break;
-               }
-               fwrite( buf, 1, n_read, stdout );
+               break;
           }
+          fwrite( buf, 1, ret, stdout );
      }
-     while( n_read > 0 );
 
      return (SSL_get_shutdown( ssl ) & SSL_RECEIVED_SHUTDOWN) ? 1 : 0;
 }
@@ -50,7 +48,7 @@ void* server_thread( void* args )
           SSL_ERROR_INTERRUPT( "peer certificate verification error" );
      }
      printf( "SSL connection opened\n" );
-     if( do_server_loop( ssl ) )
+     if( do_server_loop_v2( ssl ) )
      {
           SSL_shutdown( ssl );
      }
