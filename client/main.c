@@ -7,29 +7,25 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 #include <openssl/ssl.h>
 #include <common/common.h>
 
 
-int do_client_loop( SSL* ssl )
+int do_client_loop_v2( SSL* ssl )
 {
-     while( 1 )
+     char buf[ 80 ];
+     const size_t buflen = sizeof( buf );
+
+     while( !feof( stdin ) )
      {
-          char buf[ 80 ] = { 0 };
-          if( !fgets( buf, sizeof( buf ), stdin ) )
+          const size_t n_read = fread( buf, 1, buflen - 1, stdin );
+          if( SSL_write( ssl, buf, n_read ) <= 0 )
           {
-               break;
-          }
-          int n_written = 0;
-          for( int total_written = 0; total_written < sizeof( buf ); total_written += n_written )
-          {
-               n_written = SSL_write( ssl, buf + n_written, strlen( buf ) - total_written );
-               if( n_written <= 0 )
-               {
-                    return 0;
-               }
+               return 0;
           }
      }
+
      return 1;
 }
 
@@ -77,7 +73,7 @@ int main( int argc, char **argv )
           SSL_ERROR_INTERRUPT( "peer certificate verification error" );
      }
      printf( "ssl connection established\n" );
-     if( do_client_loop( ssl ) )
+     if( do_client_loop_v2( ssl ) )
      {
           SSL_shutdown( ssl );
      }
